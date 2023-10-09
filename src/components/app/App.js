@@ -30,7 +30,7 @@ class App extends Component {
                     <div className="char__content">
                         <ErrorBoundary>
                             <CharList onCharSelected={this.onCharSelected}/>
-                        </ErrorBoundary>        {/* 1. от сюда приходит айди*/}
+                        </ErrorBoundary>                                        {/* 1. от сюда приходит айди*/}
                         <ErrorBoundary>
                             <CharInfo charId={this.state.selectedChar}/>        {/* 3. передаётся сюда */}
                         </ErrorBoundary>            
@@ -41,5 +41,6 @@ class App extends Component {
         )
     }
 }
+
 
 export default App;
