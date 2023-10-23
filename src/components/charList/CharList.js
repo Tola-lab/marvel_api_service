@@ -2,34 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import './charList.scss';
 
 const CharList = (props) =>  {
 
     const [charList, setCharList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
     const [newItemLoading, setNewItemLoading] = useState(false);
     const [offset, setOffset] = useState(310);
     const [charEnded, setCharEnded] = useState(false);
 
 
-    const marvelService = new MarvelService();
+    const {loading, error, getAllCharacters} = useMarvelService();
 
     useEffect(() => {   // замена componentDidMount, а значит, запускается после рендеринга 
-        onRequest();    // 2. вызываем его в первый раз, когда компонент отрендерился. вызываем без аргумента, чтобы ореинтироваться на baseOffset из marvelService
+        onRequest(offset, true);    // 2. вызываем его в первый раз, когда компонент отрендерился. вызываем без аргумента, чтобы ореинтироваться на baseOffset из marvelService
     }, [])
 
-    const onRequest = (offset) => {                   // 1. отвечает за запрос на сервер
-        onCharListLoading();
-        marvelService.getAllCharacters(offset)
+    const onRequest = (offset, initial) => {                   // 1. отвечает за запрос на сервер
+        initial ? setNewItemLoading(false) : setNewItemLoading(true);
+        getAllCharacters(offset)
         .then(onCharListLoaded)            // 3. запускаем onCharListLoaded
-        .catch(onError)
-    }
-
-    const onCharListLoading = () => {
-        setNewItemLoading(true);
     }
 
     const onCharListLoaded = (newCharList) => {        // 4. который принимает в себя новые данные
@@ -39,16 +32,12 @@ const CharList = (props) =>  {
         }
 
         setCharList(charList => [...charList, ...newCharList]);     // 5. на первом рендере в charList будет пустой массив + 9 новых персонажей в newCharList
-        setLoading(false);
         setNewItemLoading(false);
         setOffset(offset => offset + 9);
         setCharEnded(ended);
     }
 
-    const onError = () => {
-        setLoading(false);
-        setError(true);
-    }
+    console.log('charlist');
 
     const itemRefs = useRef([]);
 
@@ -91,14 +80,13 @@ const CharList = (props) =>  {
     const items = renderItems(charList);
 
     const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading ? <Spinner/> : null;
-    const content = !(loading || error) ? items : null;
+    const spinner = loading && !newItemLoading ? <Spinner/> : null;
 
     return (
         <div className="char__list">
             {errorMessage}
             {spinner}
-            {content}
+            {items}
             <button 
                 className="button button__main button__long"
                 disabled={newItemLoading}
