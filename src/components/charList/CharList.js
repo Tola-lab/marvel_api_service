@@ -1,10 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import PropTypes from 'prop-types';
+import useMarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import useMarvelService from '../../services/MarvelService';
 import './charList.scss';
+
+const SetContent = (process, Component, newItemLoading) => {
+    switch (process) {
+        case 'waiting':
+            return <Spinner/>; 
+        case 'loading': 
+            return newItemLoading ? <Component/> : <Spinner/>;
+        case 'error':
+            return <ErrorMessage/>;
+        case 'confirmed':
+            return <Component/>;
+        default:
+            throw new Error('Unexpected process state');
+    }
+}
 
 const CharList = (props) =>  {
 
@@ -14,7 +29,7 @@ const CharList = (props) =>  {
     const [charEnded, setCharEnded] = useState(false);
 
 
-    const {loading, error, getAllCharacters} = useMarvelService();
+    const {getAllCharacters, process, setProcess} = useMarvelService();
 
     useEffect(() => {   // замена componentDidMount, а значит, запускается после рендеринга 
         onRequest(offset, true);    // 2. вызываем его в первый раз, когда компонент отрендерился. вызываем без аргумента, чтобы ореинтироваться на baseOffset из marvelService
@@ -23,7 +38,8 @@ const CharList = (props) =>  {
     const onRequest = (offset, initial) => {                   // 1. отвечает за запрос на сервер
         initial ? setNewItemLoading(false) : setNewItemLoading(true);
         getAllCharacters(offset)
-        .then(onCharListLoaded)            // 3. запускаем onCharListLoaded
+            .then(onCharListLoaded)            // 3. запускаем onCharListLoaded
+            .then(() => setProcess('confirmed'))
     }
 
     const onCharListLoaded = (newCharList) => {        // 4. который принимает в себя новые данные
@@ -83,16 +99,9 @@ const CharList = (props) =>  {
     }
     
 
-    const items = renderItems(charList);
-
-    const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading && !newItemLoading ? <Spinner/> : null;
-
     return (
         <div className="char__list">
-            {errorMessage}
-            {spinner}
-            {items}
+            {SetContent(process, () => renderItems(charList), newItemLoading)}
             <button 
                 className="button button__main button__long"
                 disabled={newItemLoading}
